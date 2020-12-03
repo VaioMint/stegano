@@ -23,7 +23,7 @@ def decimalisation(code, axe):
 
 formats = ['png', 'bmp', 'tiff', 'ppm', 'pgm', 'pnm', 'pcx', 'sgi', 'tga']
 
-pict = "sample_640×426.png" # adresse locale de l’image préalablement téléchargée
+pict = "some_image.png" # adresse locale de l’image préalablement téléchargée
 with Image.open(pict) as im:
      if (imghdr.what(pict) or im.format.lower()) not in formats:
         raise TypeError("Ce format n’est pas valable")
@@ -32,13 +32,12 @@ with Image.open(pict) as im:
        
 # Encodage du texte
 
-"""
-with open ('texte_.txt', 'r', encoding='utf8') as f: # adresse locale du texte préalablement téléchargé
+with open ('some_text.txt', 'r', encoding='utf8') as f: # adresse locale
     message = f.read()    
 
-"""
-message = 'All work and no play makes Jack a dull boy\n' * 8000
-   
+## or something like that:
+# message = 'All work and no play makes Jack a dull boy\n' * 8000
+
 octets = bytes(message, 'utf8')  # conversion en octets codés en UTF-8
 octets_dec = np.frombuffer(octets, dtype=np.uint8) # convertit les octets en chiffres (base 10)
 octets_bin = np.unpackbits(octets_dec) # base 10 -> base 2 et répartition en éléments d’un bit
@@ -87,6 +86,7 @@ header -= header & (2**4 - 1)  # mise à zéro des 4 bits de poids faible des oc
 im_array -= im_array & (2**nbits - 1) # ràz des nbits de poids faible des autres octets du tableau
 
 # Ecriture du header
+
 header_code = f'{nbits:04b}' + f'{code_txt.size:0{4 * (header_size - 1)}b}'
 header_code = np.array(list(header_code), dtype=np.uint8).reshape(-1, 4)
 header_code = decimalisation(header_code, 1)
@@ -99,5 +99,5 @@ im_array.ravel()[header_size:header_size+code_txt.size] += code_txt
 # Sauvegarde de l'image codée
 
 im = Image.fromarray(im_array)
-im.save(f'/home/mint/Bureau/code_{pict}')
+im.save(f'code_{pict}') # chemin sauvegarde image + code
 

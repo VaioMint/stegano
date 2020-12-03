@@ -12,7 +12,7 @@ import numpy as np
 
 # Ouverture de l'image et enregistrement des pixels
 
-im_array = np.array(Image.open('/home/mint/Bureau/code_sample_640×426.png'))
+im_array = np.array(Image.open('code_some_image.png'))
 
 # Lecture du header
 
@@ -51,5 +51,5 @@ else:
     print(f'Longueur du texte : {len(message)} caractères')
     
 # Sauvegarde du texte (facultatif)
-with open('/home/mint/Bureau/nouveau_texte.txt', 'w') as f:
+with open('new_texte.txt', 'w') as f:
   f.write(message)
