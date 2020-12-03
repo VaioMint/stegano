@@ -101,3 +101,4 @@ im_array.ravel()[header_size:header_size+code_txt.size] += code_txt
 im = Image.fromarray(im_array)
 im.save(f'code_{pict}') # chemin sauvegarde image + code
 
+# code
