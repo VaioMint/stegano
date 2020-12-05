@@ -1,9 +1,9 @@
 # coding: utf8
 
 """
-    Steganography module allowing to insert text encoded in UTF-8
-    in raster images by replacing bits. The number of bits / byte 
-    replaced is determined dynamically.
+    Steganography module allowing to insert text UTF-8 encoded 
+    in raster images by replacing bits. The number of replaced 
+    bits / byte is dynamically determined .
 """
 
 import imghdr
@@ -19,56 +19,56 @@ def decimalisation(code, axe):
     ar = np.flip(code, axis=axe)
     return np.packbits(ar, axis=axe, bitorder='little').ravel()
 
-# Sélection d'une image et enregistrement tableau de pixels
+# Select the image and record the pixel array
 
 formats = ['png', 'bmp', 'tiff', 'ppm', 'pgm', 'pnm', 'pcx', 'sgi', 'tga']
 
-pict = "some_image.png" # adresse locale de l’image préalablement téléchargée
+pict = "some_image.png" # image's path
 with Image.open(pict) as im:
      if (imghdr.what(pict) or im.format.lower()) not in formats:
-        raise TypeError("Ce format n’est pas valable")
+        raise TypeError("This format is not valid.")
      else:
         im_array = np.array(im)
        
-# Encodage du texte
+# Text encoding
 
-with open ('some_text.txt', 'r', encoding='utf8') as f: # adresse locale
+with open ('some_text.txt', 'r', encoding='utf8') as f: # local text
     message = f.read()    
 
-## or something like that:
+## or smth like that:
 # message = 'All work and no play makes Jack a dull boy\n' * 8000
 
-octets = bytes(message, 'utf8')  # conversion en octets codés en UTF-8
-octets_dec = np.frombuffer(octets, dtype=np.uint8) # convertit les octets en chiffres (base 10)
-octets_bin = np.unpackbits(octets_dec) # base 10 -> base 2 et répartition en éléments d’un bit
+octets = bytes(message, 'utf8')  # converting characters to UTF-8 encoded bytes
+octets_dec = np.frombuffer(octets, dtype=np.uint8) # convert bytes to digits (base 10)
+octets_bin = np.unpackbits(octets_dec) # base 10 to 2, split into one-bit elements
 
-# Taille du header et taille utile de l'image
+# Header size and useful image size
 
 header_size = 1 + ceil(len(f'{im_array.size:b}') / 4)
-im_size = im_array.size - header_size # taille utile en octets
+im_size = im_array.size - header_size # useful size (in bytes)
 
-# Détermination du nombre de bits / octet à remplacer (nbits)
+# Determine how many bits per byte should be replaced (nbits)
 
-for nbits in range(1, 9): # groupes d’octets
+for nbits in range(1, 9): # bytes groups
     if im_size >= len(octets) * 8/nbits:
-        break # sortie de boucle car on a trouvé le nbits minimal
+        break # loop output because the minimum nbits is found
 else:
-    raise ValueError("Texte trop long pour cette image") # msg trop long même avec nbits à 8
+    raise ValueError("Text too long for this image") # too long even with nbits = 8
 
-if nbits == 8: # les pixels de l'image ont été totalement remplacés
-    print("*"*60, "\nAvertissement : Les tailles sont compatibles mais"
-          "\nl’image sera totalement écrasée par le texte."
-          "\nPour un meilleur résultat, choisissez une image plus grande.")
+if nbits == 8: # all pixels have been replaced
+    print("*"*60, "\nWarning: The sizes are compatible but the image will be \
+          completely overwritten by the text."
+          "\nFor best result, choose a larger image.")
     print("*"*60)
     
-# Affichage de nbits et du taux de bits utilisés (facultatif)
+# Display nbits and used bit rate (optional)
 
-print("Nombre de bits/octet remplacés :", nbits)
-print('Taux de bits utilisés : ', round(len(octets) * 100 / im_size, 2), '%')
+print("Number of replaced bits per byte:", nbits)
+print('Used bits rate: ', round(len(octets) * 100 / im_size, 2), '%')
 
-# Répartition des bits du code texte par groupes de nbits
+# Distribute text code's bits by groups of nbits
 
-if octets_bin.size % nbits :  # n’est pas un multiple de nbits -> padding
+if octets_bin.size % nbits :  # is not a multiple of nbits -> padding
     masque = np.zeros(nbits * ceil(octets_bin.size / nbits), dtype=np.uint8)
     masque[:octets_bin.size] = octets_bin
     octets_bin = masque
@@ -76,29 +76,27 @@ if octets_bin.size % nbits :  # n’est pas un multiple de nbits -> padding
 code_txt = octets_bin.reshape(-1, nbits)
 code_txt = decimalisation(code_txt, 1)
 
-# Extraction du header
+# Header extraction
 
 header = im_array.flatten()[:header_size]
 
-# Mise à zéro des bits de poids faible
+# Reset of the least significant bits (LSB)
 
-header -= header & (2**4 - 1)  # mise à zéro des 4 bits de poids faible des octets du `header`
-im_array -= im_array & (2**nbits - 1) # ràz des nbits de poids faible des autres octets du tableau
+header -= header & (2**4 - 1)  # reset of the 4 LSB of the header's bytes
+im_array -= im_array & (2**nbits - 1) # nbits reset of other array's bytes
 
-# Ecriture du header
+# Header writing
 
 header_code = f'{nbits:04b}' + f'{code_txt.size:0{4 * (header_size - 1)}b}'
 header_code = np.array(list(header_code), dtype=np.uint8).reshape(-1, 4)
 header_code = decimalisation(header_code, 1)
 
-# Fusion des codes texte et image
+# Merging text and image codes
 
 im_array.ravel()[:header_size] = header + header_code
 im_array.ravel()[header_size:header_size+code_txt.size] += code_txt
 
-# Sauvegarde de l'image codée
+# Saving the encoded image
 
 im = Image.fromarray(im_array)
-im.save(f'code_{pict}') # chemin sauvegarde image + code
-
-# code
+im.save(f'code_{pict}') # path image + code
